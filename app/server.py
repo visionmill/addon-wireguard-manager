@@ -1,5 +1,5 @@
 import os
-from flask import Flask, abort, flash, render_template, request, send_file, url_for
+from flask import Flask, abort, flash, make_response, render_template, request, send_file, url_for
 import wireguard as wg
 
 app = Flask(__name__)
@@ -26,7 +26,18 @@ def template_helpers():
 def render_index():
     state = wg.load_state()
     status = wg.wg_status() if state.get('server') else 'Not configured yet.'
-    return render_template('index.html', state=state, status=status)
+    client_configs = {}
+    if state.get('server'):
+        client_configs = {
+            client['name']: wg.client_config_text(state['server'], client)
+            for client in state.get('clients', [])
+        }
+    return render_template(
+        'index.html',
+        state=state,
+        status=status,
+        client_configs=client_configs,
+    )
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -115,7 +126,14 @@ def download_conf(name):
     if not client:
         abort(404)
     path = wg.write_client_config(state['server'], client)
-    return send_file(path, as_attachment=True, download_name=f'{name}.conf', mimetype='text/plain')
+    response = make_response(send_file(
+        path,
+        as_attachment=True,
+        download_name=f'{name}.conf',
+        mimetype='application/octet-stream',
+    ))
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 
 @app.get('/clients/<name>.png')

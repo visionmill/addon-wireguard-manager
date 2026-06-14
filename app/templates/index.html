@@ -165,7 +165,17 @@
             <p>{{ c.address }} · {{ c.route_mode }}</p>
           </div>
           <img alt="QR code for {{ c.name }}" src="{{ app_url('qr', name=c.name) }}">
-          <a class="button" href="{{ app_url('download_conf', name=c.name) }}">Download .conf</a>
+          <div class="client-actions">
+            <a class="button" href="{{ app_url('download_conf', name=c.name) }}" target="_blank" rel="noopener">Download .conf</a>
+          </div>
+          <details class="config-drawer">
+            <summary>Show config text</summary>
+            <textarea id="config-{{ loop.index }}" readonly spellcheck="false">{{ client_configs[c.name] }}</textarea>
+            <div class="config-actions">
+              <button type="button" class="secondary copy-config" data-copy-target="config-{{ loop.index }}">Copy config</button>
+            </div>
+            <p class="hint">For file import, save this as <strong>{{ c.name }}.conf</strong>. A .txt file will not import into WireGuard.</p>
+          </details>
           <form method="post" action="" onsubmit="return confirm('Delete {{ c.name }}?');">
             <input type="hidden" name="action" value="delete_client">
             <input type="hidden" name="name" value="{{ c.name }}">
@@ -190,5 +200,22 @@
     </section>
     {% endif %}
   </main>
+  <script>
+    document.querySelectorAll('.copy-config').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copyTarget);
+        if (!target) return;
+        target.select();
+        target.setSelectionRange(0, target.value.length);
+        try {
+          await navigator.clipboard.writeText(target.value);
+          button.textContent = 'Copied';
+          setTimeout(() => { button.textContent = 'Copy config'; }, 1600);
+        } catch (error) {
+          document.execCommand('copy');
+        }
+      });
+    });
+  </script>
 </body>
 </html>

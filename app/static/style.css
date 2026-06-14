@@ -351,6 +351,61 @@ button.danger:hover {
   width: 184px;
 }
 
+.client-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.config-drawer {
+  border: 1px solid #dce4ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.config-drawer summary {
+  color: #2f3b50;
+  cursor: pointer;
+  font-size: .9rem;
+  font-weight: 850;
+  list-style-position: inside;
+  padding: 10px 11px;
+}
+
+.config-drawer[open] summary {
+  border-bottom: 1px solid #e4eaf2;
+}
+
+.config-drawer textarea {
+  background: #101828;
+  border: 0;
+  border-radius: 0;
+  color: #edf3f8;
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: .78rem;
+  line-height: 1.45;
+  margin: 0;
+  min-height: 210px;
+  padding: 10px;
+  resize: vertical;
+  white-space: pre;
+}
+
+.config-actions {
+  padding: 10px;
+}
+
+.config-actions button {
+  width: 100%;
+}
+
+.hint {
+  color: #667286;
+  font-size: .82rem;
+  margin: 0;
+  padding: 0 10px 10px;
+}
+
 pre {
   background: #182033;
   border-radius: 8px;
