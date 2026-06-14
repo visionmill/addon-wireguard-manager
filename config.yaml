@@ -1,0 +1,29 @@
+name: "WireGuard Wizard"
+version: "0.1.0"
+slug: "wireguard_wizard"
+description: "PiVPN-style WireGuard setup wizard for Home Assistant OS"
+url: "https://github.com/local/ha-wireguard-wizard"
+arch:
+  - aarch64
+  - armv7
+  - amd64
+startup: services
+boot: auto
+init: false
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:vpn
+panel_title: WireGuard Wizard
+host_network: true
+privileged:
+  - NET_ADMIN
+ports:
+  51820/udp: 51820
+ports_description:
+  51820/udp: WireGuard VPN
+options:
+  web_port: 8099
+  wg_port: 51820
+schema:
+  web_port: port
+  wg_port: port
