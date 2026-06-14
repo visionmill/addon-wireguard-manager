@@ -1,5 +1,19 @@
 # WireGuard Wizard docs
 
+## Setup
+
+The setup wizard creates a WireGuard server profile, generates server keys, and writes the server configuration to:
+
+```text
+/data/wireguard/wg0.conf
+```
+
+Client profiles and QR codes are stored under:
+
+```text
+/data/clients/
+```
+
 ## Routing modes
 
 ### VPN subnet only
@@ -27,6 +41,20 @@ The server adds an iptables masquerade rule so clients can reach the internet th
 ## Router setup
 
 Forward UDP `51820` to the Home Assistant Pi.
+
+If you use a different WireGuard port in the wizard, forward that UDP port instead.
+
+## Starting and restarting WireGuard
+
+The Web UI shows a friendly running/not-running status. Technical command output from `wg-quick` and `wg show` is available under **Show technical details**.
+
+Successful output can still contain command lines such as `ip link add`, `wg setconf`, and `iptables`. Those lines are informational unless the status message says WireGuard could not start.
+
+## iPhone and mobile setup
+
+The QR code is the recommended setup method for iPhone.
+
+If you use the config text instead, save it as a `.conf` file. A `.txt` file will not import into the WireGuard app.
 
 ## Reset
 
