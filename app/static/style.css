@@ -388,7 +388,8 @@ button.danger:hover {
   min-height: 210px;
   padding: 10px;
   resize: vertical;
-  white-space: pre;
+  white-space: pre-wrap;
+  width: 100%;
 }
 
 .config-actions {

@@ -186,7 +186,6 @@ def render_server_config(state: Dict):
         f"PrivateKey = {server['private_key']}",
         'SaveConfig = false',
         '# NAT/forwarding for clients using route-all mode. Safe for LAN-only clients too.',
-        'PreUp = sysctl -w net.ipv4.ip_forward=1',
         f'PostUp = iptables -t nat -A POSTROUTING -s {vpn_net} -o {iface} -j MASQUERADE',
         f'PostDown = iptables -t nat -D POSTROUTING -s {vpn_net} -o {iface} -j MASQUERADE',
         '',
@@ -204,6 +203,7 @@ def render_server_config(state: Dict):
         ]
     ensure_dirs()
     WG_CONF.write_text('\n'.join(lines))
+    WG_CONF.chmod(0o600)
     try:
         if ETC_WG_CONF.exists() or ETC_WG_CONF.is_symlink():
             ETC_WG_CONF.unlink()
@@ -236,6 +236,7 @@ def client_config_text(server: Dict, client: Dict) -> str:
 def write_client_config(server: Dict, client: Dict) -> Path:
     path = CLIENT_DIR / f"{client['name']}.conf"
     path.write_text(client_config_text(server, client))
+    path.chmod(0o600)
     return path
 
 

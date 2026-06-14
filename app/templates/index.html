@@ -166,7 +166,7 @@
           </div>
           <img alt="QR code for {{ c.name }}" src="{{ app_url('qr', name=c.name) }}">
           <div class="client-actions">
-            <a class="button" href="{{ app_url('download_conf', name=c.name) }}" target="_blank" rel="noopener">Download .conf</a>
+            <button type="button" class="save-config" data-copy-target="config-{{ loop.index }}" data-filename="{{ c.name }}.conf">Save .conf</button>
           </div>
           <details class="config-drawer">
             <summary>Show config text</summary>
@@ -214,6 +214,22 @@
         } catch (error) {
           document.execCommand('copy');
         }
+      });
+    });
+
+    document.querySelectorAll('.save-config').forEach((button) => {
+      button.addEventListener('click', () => {
+        const target = document.getElementById(button.dataset.copyTarget);
+        if (!target) return;
+        const blob = new Blob([target.value], { type: 'application/x-wireguard-profile' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = button.dataset.filename || 'wireguard.conf';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
       });
     });
   </script>
