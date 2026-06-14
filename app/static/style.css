@@ -407,9 +407,53 @@ button.danger:hover {
   padding: 0 10px 10px;
 }
 
+.status-summary {
+  border-radius: 8px;
+  font-weight: 850;
+  margin-bottom: 12px;
+  padding: 11px 13px;
+}
+
+.status-summary.ready {
+  background: #e7f7ed;
+  border: 1px solid #a7d8b9;
+  color: #17613a;
+}
+
+.status-summary.pending {
+  background: #fff8e7;
+  border: 1px solid #e6c879;
+  color: #775414;
+}
+
+.status-summary.error {
+  background: #fff0ee;
+  border: 1px solid #efada4;
+  color: #9f2a20;
+}
+
+.diagnostics {
+  border: 1px solid #dce4ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.diagnostics summary {
+  color: #2f3b50;
+  cursor: pointer;
+  font-size: .9rem;
+  font-weight: 850;
+  list-style-position: inside;
+  padding: 10px 11px;
+}
+
+.diagnostics[open] summary {
+  border-bottom: 1px solid #e4eaf2;
+}
+
 pre {
   background: #182033;
-  border-radius: 8px;
+  border-radius: 0 0 8px 8px;
   color: #edf3f8;
   font-size: .86rem;
   margin: 0;

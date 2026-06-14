@@ -196,7 +196,11 @@
           <h2>Status</h2>
         </div>
       </div>
-      <pre>{{ status }}</pre>
+      <p class="status-summary {{ status_state }}">{{ status_summary }}</p>
+      <details class="diagnostics">
+        <summary>Show technical details</summary>
+        <pre>{{ status_details }}</pre>
+      </details>
     </section>
     {% endif %}
   </main>

@@ -26,6 +26,16 @@ def template_helpers():
 def render_index():
     state = wg.load_state()
     status = wg.wg_status() if state.get('server') else 'Not configured yet.'
+    status_summary = 'WireGuard is not configured yet.'
+    status_state = 'pending'
+    if state.get('server'):
+        is_running = 'interface: wg0' in status.lower()
+        status_summary = 'WireGuard is running.' if is_running else 'WireGuard is not running.'
+        status_state = 'ready' if is_running else 'error'
+    restart_log = wg.load_restart_log()
+    status_details = status
+    if restart_log:
+        status_details = f'Last restart\n{restart_log}\n\nCurrent status\n{status}'
     client_configs = {}
     if state.get('server'):
         client_configs = {
@@ -36,6 +46,9 @@ def render_index():
         'index.html',
         state=state,
         status=status,
+        status_summary=status_summary,
+        status_state=status_state,
+        status_details=status_details,
         client_configs=client_configs,
     )
 
@@ -60,7 +73,7 @@ def index():
                 flash(f"Added {client['name']}. Scan the QR code or download the config below.", 'success')
             elif action == 'restart':
                 result = wg.restart_wg()
-                flash(result or 'WireGuard restart requested.', 'success')
+                flash(result['message'], 'success' if result['ok'] else 'error')
             elif action == 'delete_client':
                 name = request.form.get('name', '')
                 wg.remove_client(name)
@@ -115,7 +128,7 @@ def delete_client(name):
 @app.post('/restart')
 def restart():
     result = wg.restart_wg()
-    flash(result or 'WireGuard restart requested.', 'success')
+    flash(result['message'], 'success' if result['ok'] else 'error')
     return render_index()
 
 

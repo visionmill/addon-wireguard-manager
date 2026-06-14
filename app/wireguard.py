@@ -12,6 +12,7 @@ DATA = Path(os.environ.get('DATA_DIR', '/data'))
 WG_DIR = DATA / 'wireguard'
 CLIENT_DIR = DATA / 'clients'
 STATE_FILE = DATA / 'state.json'
+RESTART_LOG = DATA / 'last_restart.log'
 WG_CONF = WG_DIR / 'wg0.conf'
 ETC_WG_DIR = Path(os.environ.get('ETC_WG_DIR', '/etc/wireguard'))
 ETC_WG_CONF = ETC_WG_DIR / 'wg0.conf'
@@ -53,6 +54,13 @@ def load_state() -> Dict:
 def save_state(state: Dict):
     ensure_dirs()
     STATE_FILE.write_text(json.dumps(state, indent=2))
+
+
+def load_restart_log() -> str:
+    ensure_dirs()
+    if RESTART_LOG.exists():
+        return RESTART_LOG.read_text()
+    return ''
 
 
 def clean_name(name: str) -> str:
@@ -251,16 +259,26 @@ def client_qr_png(client_name: str) -> Path:
     return path
 
 
-def restart_wg() -> str:
+def restart_wg() -> Dict:
     if not WG_CONF.exists():
-        return 'No wg0.conf yet'
+        log = 'No wg0.conf yet'
+        RESTART_LOG.write_text(log)
+        return {'ok': False, 'message': 'No WireGuard configuration exists yet.', 'log': log}
     out = []
+    ok = True
     for cmd in (['wg-quick', 'down', 'wg0'], ['wg-quick', 'up', 'wg0']):
         p = subprocess.run(cmd, capture_output=True, text=True)
         out.append(f"$ {' '.join(cmd)}\n{p.stdout}{p.stderr}")
         if cmd[1] == 'up' and p.returncode != 0:
+            ok = False
             break
-    return '\n'.join(out)
+    log = '\n'.join(out)
+    RESTART_LOG.write_text(log)
+    if ok:
+        message = 'WireGuard is running.'
+    else:
+        message = 'WireGuard could not start. Open diagnostics below for details.'
+    return {'ok': ok, 'message': message, 'log': log}
 
 
 def wg_status() -> str:
