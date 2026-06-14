@@ -1,0 +1,1 @@
+# addon-wireguard-manager
