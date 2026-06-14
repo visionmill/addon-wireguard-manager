@@ -1,46 +1,111 @@
-from pathlib import Path
-from flask import Flask, abort, redirect, render_template, request, send_file, url_for
+import os
+from flask import Flask, abort, flash, render_template, request, send_file, url_for
 import wireguard as wg
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('WIZARD_SECRET_KEY', 'wireguard-wizard-local')
 
 
-@app.route('/')
-def index():
+def app_url(endpoint, **values):
+    path = url_for(endpoint, **values)
+    ingress_path = (
+        request.headers.get('X-Ingress-Path')
+        or request.headers.get('X-Forwarded-Prefix')
+        or ''
+    ).rstrip('/')
+    if ingress_path and path.startswith('/'):
+        return f'{ingress_path}{path}'
+    return path
+
+
+@app.context_processor
+def template_helpers():
+    return {'app_url': app_url}
+
+
+def render_index():
     state = wg.load_state()
     status = wg.wg_status() if state.get('server') else 'Not configured yet.'
     return render_template('index.html', state=state, status=status)
 
 
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        action = request.form.get('action', '')
+        try:
+            if action == 'setup':
+                wg.setup_server(
+                    public_host=request.form['public_host'],
+                    port=int(request.form.get('port', 51820)),
+                    vpn_cidr=request.form.get('vpn_cidr', '10.6.0.0/24'),
+                    lan_cidr=request.form.get('lan_cidr', ''),
+                    dns=request.form.get('dns', '1.1.1.1'),
+                    default_route_mode=request.form.get('default_route_mode', 'lan'),
+                )
+                flash('WireGuard server configuration created.', 'success')
+            elif action == 'add_client':
+                client = wg.add_client(request.form['name'], request.form.get('route_mode', 'lan'))
+                flash(f"Added {client['name']}. Scan the QR code or download the config below.", 'success')
+            elif action == 'restart':
+                result = wg.restart_wg()
+                flash(result or 'WireGuard restart requested.', 'success')
+            elif action == 'delete_client':
+                name = request.form.get('name', '')
+                wg.remove_client(name)
+                flash(f'Revoked {name}.', 'success')
+            else:
+                flash('Unknown action.', 'error')
+        except Exception as exc:
+            flash(str(exc), 'error')
+    return render_index()
+
+
 @app.post('/setup')
 def setup():
-    wg.setup_server(
-        public_host=request.form['public_host'],
-        port=int(request.form.get('port', 51820)),
-        vpn_cidr=request.form.get('vpn_cidr', '10.6.0.0/24'),
-        lan_cidr=request.form.get('lan_cidr', ''),
-        dns=request.form.get('dns', '1.1.1.1'),
-        default_route_mode=request.form.get('default_route_mode', 'lan'),
-    )
-    return redirect(url_for('index'))
+    try:
+        wg.setup_server(
+            public_host=request.form['public_host'],
+            port=int(request.form.get('port', 51820)),
+            vpn_cidr=request.form.get('vpn_cidr', '10.6.0.0/24'),
+            lan_cidr=request.form.get('lan_cidr', ''),
+            dns=request.form.get('dns', '1.1.1.1'),
+            default_route_mode=request.form.get('default_route_mode', 'lan'),
+        )
+        flash('WireGuard server configuration created.', 'success')
+        return render_index()
+    except Exception as exc:
+        flash(str(exc), 'error')
+        return render_index()
 
 
 @app.post('/clients')
 def clients():
-    wg.add_client(request.form['name'], request.form.get('route_mode', 'lan'))
-    return redirect(url_for('index'))
+    try:
+        client = wg.add_client(request.form['name'], request.form.get('route_mode', 'lan'))
+        flash(f"Added {client['name']}. Scan the QR code or download the config below.", 'success')
+        return render_index()
+    except Exception as exc:
+        flash(str(exc), 'error')
+        return render_index()
 
 
 @app.post('/clients/<name>/delete')
 def delete_client(name):
-    wg.remove_client(name)
-    return redirect(url_for('index'))
+    try:
+        wg.remove_client(name)
+        flash(f'Revoked {name}.', 'success')
+        return render_index()
+    except Exception as exc:
+        flash(str(exc), 'error')
+        return render_index()
 
 
 @app.post('/restart')
 def restart():
-    wg.restart_wg()
-    return redirect(url_for('index'))
+    result = wg.restart_wg()
+    flash(result or 'WireGuard restart requested.', 'success')
+    return render_index()
 
 
 @app.get('/clients/<name>.conf')

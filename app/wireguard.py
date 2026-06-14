@@ -8,12 +8,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
 
-DATA = Path('/data')
+DATA = Path(os.environ.get('DATA_DIR', '/data'))
 WG_DIR = DATA / 'wireguard'
 CLIENT_DIR = DATA / 'clients'
 STATE_FILE = DATA / 'state.json'
 WG_CONF = WG_DIR / 'wg0.conf'
-ETC_WG_CONF = Path('/etc/wireguard/wg0.conf')
+ETC_WG_DIR = Path(os.environ.get('ETC_WG_DIR', '/etc/wireguard'))
+ETC_WG_CONF = ETC_WG_DIR / 'wg0.conf'
 
 
 def sh(cmd: List[str], input_text: Optional[str] = None, check: bool = True) -> str:
@@ -26,7 +27,10 @@ def sh(cmd: List[str], input_text: Optional[str] = None, check: bool = True) -> 
 def ensure_dirs():
     WG_DIR.mkdir(parents=True, exist_ok=True)
     CLIENT_DIR.mkdir(parents=True, exist_ok=True)
-    Path('/etc/wireguard').mkdir(parents=True, exist_ok=True)
+    try:
+        ETC_WG_DIR.mkdir(parents=True, exist_ok=True)
+    except PermissionError:
+        pass
 
 
 def wg_keypair() -> Dict[str, str]:
@@ -58,6 +62,12 @@ def clean_name(name: str) -> str:
     return cleaned[:40]
 
 
+def clean_route_mode(route_mode: str) -> str:
+    if route_mode not in {'home', 'lan', 'all'}:
+        raise ValueError('Choose a valid routing mode')
+    return route_mode
+
+
 def next_client_ip(vpn_cidr: str, clients: List[Dict]) -> str:
     net = ipaddress.ip_network(vpn_cidr, strict=False)
     used = {c.get('address', '').split('/')[0] for c in clients}
@@ -83,13 +93,19 @@ def detect_default_iface() -> str:
 
 def setup_server(public_host: str, port: int, vpn_cidr: str, lan_cidr: str, dns: str, default_route_mode: str) -> Dict:
     ensure_dirs()
+    public_host = public_host.strip()
+    if not public_host:
+        raise ValueError('Public hostname or IP address is required')
+    if not 1 <= int(port) <= 65535:
+        raise ValueError('WireGuard UDP port must be between 1 and 65535')
+    default_route_mode = clean_route_mode(default_route_mode)
     ipaddress.ip_network(vpn_cidr, strict=False)
     if lan_cidr:
         ipaddress.ip_network(lan_cidr, strict=False)
     keys = wg_keypair()
     state = load_state()
     state['server'] = {
-        'public_host': public_host.strip(),
+        'public_host': public_host,
         'port': int(port),
         'vpn_cidr': vpn_cidr.strip(),
         'server_address': server_address(vpn_cidr),
@@ -125,6 +141,7 @@ def add_client(name: str, route_mode: str) -> Dict:
     if not state.get('server'):
         raise RuntimeError('Run server setup first')
     name = clean_name(name)
+    route_mode = clean_route_mode(route_mode)
     if any(c['name'] == name for c in state['clients']):
         raise ValueError('A client with that name already exists')
     keys = wg_keypair()

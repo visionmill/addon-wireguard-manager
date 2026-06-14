@@ -4,88 +4,171 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WireGuard Wizard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ app_url('static', filename='style.css') }}">
 </head>
 <body>
-  <main>
-    <header>
-      <h1>WireGuard Wizard</h1>
-      <p>PiVPN-style setup for Home Assistant OS.</p>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Home Assistant add-on</p>
+        <h1>WireGuard Wizard</h1>
+      </div>
+      <span class="status-pill {% if state.server %}ready{% else %}pending{% endif %}">
+        {% if state.server %}Configured{% else %}Setup needed{% endif %}
+      </span>
     </header>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="messages" role="status" aria-live="polite">
+      {% for category, message in messages %}
+      <p class="message {{ category }}">{{ message }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
     {% if not state.server %}
-    <section class="card">
-      <h2>1. Set up the VPN server</h2>
-      <form method="post" action="{{ url_for('setup') }}">
-        <label>Public hostname or DDNS
-          <input name="public_host" placeholder="yourname.duckdns.org" required>
-        </label>
-        <div class="grid">
-          <label>WireGuard UDP port
-            <input name="port" value="51820" required>
-          </label>
-          <label>VPN subnet
-            <input name="vpn_cidr" value="10.6.0.0/24" required>
-          </label>
+    <section class="hero-panel">
+      <div class="intro">
+        <p class="eyebrow">PiVPN-style flow</p>
+        <h2>Create a server profile</h2>
+        <p>Set the public endpoint, choose the private VPN range, and pick the default routing behavior for new device profiles.</p>
+      </div>
+
+      <form method="post" action="" class="wizard-form">
+        <input type="hidden" name="action" value="setup">
+        <div class="step">
+          <span class="step-number">1</span>
+          <div>
+            <h3>Endpoint</h3>
+            <div class="fields two">
+              <label>Public hostname or DDNS
+                <input name="public_host" placeholder="yourname.duckdns.org" autocomplete="hostname" required>
+              </label>
+              <label>WireGuard UDP port
+                <input name="port" type="number" min="1" max="65535" value="51820" inputmode="numeric" required>
+              </label>
+            </div>
+          </div>
         </div>
-        <label>Home LAN subnet
-          <input name="lan_cidr" value="192.168.1.0/24" required>
-        </label>
-        <label>DNS for VPN clients
-          <input name="dns" value="1.1.1.1" required>
-        </label>
-        <label>Default client routing mode
-          <select name="default_route_mode">
-            <option value="lan">Home network / LAN</option>
-            <option value="home">VPN subnet only</option>
-            <option value="all">Route all internet traffic through VPN</option>
-          </select>
-        </label>
-        <button type="submit">Create server config</button>
+
+        <div class="step">
+          <span class="step-number">2</span>
+          <div>
+            <h3>Network</h3>
+            <div class="fields two">
+              <label>VPN subnet
+                <input name="vpn_cidr" value="10.6.0.0/24" required>
+              </label>
+              <label>Home LAN subnet
+                <input name="lan_cidr" value="192.168.1.0/24" required>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <span class="step-number">3</span>
+          <div>
+            <h3>Profiles</h3>
+            <div class="fields two">
+              <label>DNS for VPN clients
+                <input name="dns" value="1.1.1.1" required>
+              </label>
+              <label>Default client routing mode
+                <select name="default_route_mode">
+                  <option value="lan">Home network / LAN</option>
+                  <option value="home">VPN subnet only</option>
+                  <option value="all">Route all internet traffic through VPN</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Create server config</button>
+        </div>
       </form>
     </section>
     {% else %}
-    <section class="card">
-      <h2>Server</h2>
-      <dl>
-        <dt>Endpoint</dt><dd>{{ state.server.public_host }}:{{ state.server.port }}</dd>
-        <dt>VPN subnet</dt><dd>{{ state.server.vpn_cidr }}</dd>
-        <dt>LAN subnet</dt><dd>{{ state.server.lan_cidr }}</dd>
-        <dt>Outbound interface</dt><dd>{{ state.server.interface }}</dd>
-      </dl>
-      <form method="post" action="{{ url_for('restart') }}">
-        <button type="submit" class="secondary">Restart WireGuard</button>
-      </form>
+    <section class="summary-grid">
+      <article class="metric">
+        <span>Endpoint</span>
+        <strong>{{ state.server.public_host }}:{{ state.server.port }}</strong>
+      </article>
+      <article class="metric">
+        <span>VPN subnet</span>
+        <strong>{{ state.server.vpn_cidr }}</strong>
+      </article>
+      <article class="metric">
+        <span>LAN subnet</span>
+        <strong>{{ state.server.lan_cidr }}</strong>
+      </article>
+      <article class="metric">
+        <span>Devices</span>
+        <strong>{{ state.clients|length }}</strong>
+      </article>
     </section>
 
-    <section class="card">
-      <h2>Add a device</h2>
-      <form method="post" action="{{ url_for('clients') }}">
-        <label>Device name
-          <input name="name" placeholder="jonathan-phone" required>
-        </label>
-        <label>Routing mode
-          <select name="route_mode">
-            <option value="lan" {% if state.server.default_route_mode == 'lan' %}selected{% endif %}>Home network / LAN</option>
-            <option value="home" {% if state.server.default_route_mode == 'home' %}selected{% endif %}>VPN subnet only</option>
-            <option value="all" {% if state.server.default_route_mode == 'all' %}selected{% endif %}>Route all internet traffic through VPN</option>
-          </select>
-        </label>
-        <button type="submit">Add device</button>
-      </form>
+    <section class="workspace">
+      <div class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Client profiles</p>
+            <h2>Add a device</h2>
+          </div>
+        </div>
+        <form method="post" action="" class="inline-form">
+          <input type="hidden" name="action" value="add_client">
+          <label>Device name
+            <input name="name" placeholder="jonathan-phone" required>
+          </label>
+          <label>Routing mode
+            <select name="route_mode">
+              <option value="lan" {% if state.server.default_route_mode == 'lan' %}selected{% endif %}>Home network / LAN</option>
+              <option value="home" {% if state.server.default_route_mode == 'home' %}selected{% endif %}>VPN subnet only</option>
+              <option value="all" {% if state.server.default_route_mode == 'all' %}selected{% endif %}>Route all internet traffic through VPN</option>
+            </select>
+          </label>
+          <button type="submit">Add device</button>
+        </form>
+      </div>
+
+      <div class="panel ops-panel">
+        <div>
+          <p class="eyebrow">Service</p>
+          <h2>WireGuard</h2>
+          <p>Outbound interface: <strong>{{ state.server.interface }}</strong></p>
+        </div>
+        <form method="post" action="">
+          <input type="hidden" name="action" value="restart">
+          <button type="submit" class="secondary">Restart WireGuard</button>
+        </form>
+      </div>
     </section>
 
-    <section class="card">
-      <h2>Devices</h2>
+    <section class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Provisioning</p>
+          <h2>Devices</h2>
+        </div>
+      </div>
       {% if state.clients %}
       <div class="clients">
         {% for c in state.clients %}
         <div class="client">
-          <h3>{{ c.name }}</h3>
-          <p><strong>IP:</strong> {{ c.address }}<br><strong>Mode:</strong> {{ c.route_mode }}</p>
-          <img alt="QR code for {{ c.name }}" src="{{ url_for('qr', name=c.name) }}">
-          <p><a class="button" href="{{ url_for('download_conf', name=c.name) }}">Download .conf</a></p>
-          <form method="post" action="{{ url_for('delete_client', name=c.name) }}" onsubmit="return confirm('Delete {{ c.name }}?');">
+          <div class="client-meta">
+            <h3>{{ c.name }}</h3>
+            <p>{{ c.address }} · {{ c.route_mode }}</p>
+          </div>
+          <img alt="QR code for {{ c.name }}" src="{{ app_url('qr', name=c.name) }}">
+          <a class="button" href="{{ app_url('download_conf', name=c.name) }}">Download .conf</a>
+          <form method="post" action="" onsubmit="return confirm('Delete {{ c.name }}?');">
+            <input type="hidden" name="action" value="delete_client">
+            <input type="hidden" name="name" value="{{ c.name }}">
             <button type="submit" class="danger">Revoke/delete</button>
           </form>
         </div>
@@ -96,8 +179,13 @@
       {% endif %}
     </section>
 
-    <section class="card">
-      <h2>Status</h2>
+    <section class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Runtime</p>
+          <h2>Status</h2>
+        </div>
+      </div>
       <pre>{{ status }}</pre>
     </section>
     {% endif %}
