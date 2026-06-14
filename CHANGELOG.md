@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.6
+
+- Refined add-on artwork with a clean WireGuard symbol.
+- Added a Web UI shortcut back to the Home Assistant add-on settings page.
+
 ## 0.1.5
 
 - Added add-on artwork and release-ready documentation.

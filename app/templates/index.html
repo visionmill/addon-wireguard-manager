@@ -9,13 +9,19 @@
 <body>
   <main class="shell">
     <header class="topbar">
-      <div>
-        <p class="eyebrow">Home Assistant add-on</p>
-        <h1>WireGuard Wizard</h1>
+      <div class="brand">
+        <img src="{{ app_url('static', filename='wireguard-symbol.png') }}" alt="WireGuard" class="brand-logo">
+        <div>
+          <p class="eyebrow">Home Assistant add-on</p>
+          <h1>WireGuard Wizard</h1>
+        </div>
       </div>
-      <span class="status-pill {% if state.server %}ready{% else %}pending{% endif %}">
-        {% if state.server %}Configured{% else %}Setup needed{% endif %}
-      </span>
+      <div class="topbar-actions">
+        <button type="button" class="secondary compact" id="addon-settings">Add-on settings</button>
+        <span class="status-pill {% if state.server %}ready{% else %}pending{% endif %}">
+          {% if state.server %}Configured{% else %}Setup needed{% endif %}
+        </span>
+      </div>
     </header>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -205,6 +211,17 @@
     {% endif %}
   </main>
   <script>
+    document.getElementById('addon-settings')?.addEventListener('click', () => {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      const appIndex = parts.indexOf('app');
+      const addonId = appIndex >= 0 ? parts[appIndex + 1] : null;
+      if (addonId) {
+        window.top.location.href = `${window.location.origin}/hassio/addon/${addonId}/config`;
+        return;
+      }
+      window.history.back();
+    });
+
     document.querySelectorAll('.copy-config').forEach((button) => {
       button.addEventListener('click', async () => {
         const target = document.getElementById(button.dataset.copyTarget);

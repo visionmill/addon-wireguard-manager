@@ -28,6 +28,27 @@ body {
   margin-bottom: 18px;
 }
 
+.brand {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+}
+
+.brand-logo {
+  display: block;
+  flex: 0 0 auto;
+  height: 58px;
+  width: 58px;
+}
+
+.topbar-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+}
+
 h1,
 h2,
 h3,
@@ -228,6 +249,11 @@ button:hover,
 
 button.secondary {
   background: #42526a;
+}
+
+button.compact {
+  min-height: 36px;
+  padding: 8px 11px;
 }
 
 button.secondary:hover {
@@ -485,6 +511,15 @@ pre {
   .topbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .topbar-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .topbar-actions button {
+    flex: 1 1 auto;
   }
 
   .fields.two,
