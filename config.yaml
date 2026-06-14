@@ -2,7 +2,7 @@ name: "WireGuard Wizard"
 version: "0.1.0"
 slug: "wireguard_wizard"
 description: "PiVPN-style WireGuard setup wizard for Home Assistant OS"
-url: "https://github.com/local/ha-wireguard-wizard"
+url: "https://github.com/visionmill/addon-wireguard-manager"
 arch:
   - aarch64
   - armv7
