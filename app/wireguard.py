@@ -92,9 +92,17 @@ def server_address(vpn_cidr: str) -> str:
 
 
 def detect_default_iface() -> str:
+    # With host_network=true the container shares the host routing table,
+    # so 'ip route' returns the host interface name (e.g. end0). But iptables
+    # inside the container sees the veth interface name (e.g. eth0).
+    # We find the correct name by listing interfaces from /sys/class/net
+    # and picking the first one that isn't loopback or a wg interface.
     try:
-        out = sh(['sh', '-c', "ip route show default | awk '{print $5; exit}'"], check=False)
-        return out or 'eth0'
+        ifaces = sh(['sh', '-c', 'ls /sys/class/net/'], check=False).split()
+        for iface in ifaces:
+            if iface != 'lo' and not iface.startswith('wg'):
+                return iface
+        return 'eth0'
     except Exception:
         return 'eth0'
 
