@@ -187,9 +187,9 @@ def render_server_config(state: Dict):
         f"ListenPort = {server['port']}",
         f"PrivateKey = {server['private_key']}",
         'SaveConfig = false',
-        '# NAT/forwarding for clients using route-all mode. Safe for LAN-only clients too.',
-        f'PostUp = iptables -t nat -A POSTROUTING -s {vpn_net} -o {iface} -j MASQUERADE',
-        f'PostDown = iptables -t nat -D POSTROUTING -s {vpn_net} -o {iface} -j MASQUERADE',
+        '# NAT/forwarding rules so clients can reach the internet.',
+        f'PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -s {vpn_net} -o {iface} -j MASQUERADE',
+        f'PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -s {vpn_net} -o {iface} -j MASQUERADE',
         '',
     ]
     for c in state.get('clients', []):
