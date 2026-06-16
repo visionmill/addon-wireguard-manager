@@ -1,5 +1,5 @@
 name: "WireGuard Wizard"
-version: "0.1.6"
+version: "0.1.7"
 slug: "wireguard_wizard"
 description: "PiVPN-style WireGuard setup wizard for Home Assistant OS"
 url: "https://github.com/visionmill/addon-wireguard-manager"

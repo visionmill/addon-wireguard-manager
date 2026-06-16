@@ -185,7 +185,10 @@ def remove_client(name: str):
 
 def render_server_config(state: Dict):
     server = state['server']
-    iface = server.get('interface') or 'eth0'
+    # Always detect the live default interface at render time.
+    # The container's interface name (eth0) differs from the host name
+    # (end0) that was stored during setup, so we don't trust the stored value.
+    iface = detect_default_iface()
     vpn_net = str(ipaddress.ip_network(server['vpn_cidr'], strict=False))
     lines = [
         '[Interface]',
