@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.2.3
+
+- Client configs and server state now persist across add-on uninstalls.
+- Re-running server setup after reinstall no longer wipes existing clients.
+
+## 0.2.2
+
+- Moved data storage to `/config/wireguard_wizard` so it survives uninstall.
+
+## 0.2.1
+
+- Added FORWARD iptables rules required for VPN traffic to flow through the server.
+
+## 0.2.0
+
+- Fixed iptables interface detection — hardcoded `eth0` which is what the container always sees regardless of host interface name.
+
+## 0.1.9
+
+- Attempted dynamic interface detection via `/sys/class/net` excluding docker/bridge interfaces.
+
+## 0.1.8
+
+- Attempted dynamic interface detection to fix NAT on systems where host interface is not `end0`.
+
+## 0.1.7
+
+- Fixed iptables MASQUERADE rule using wrong interface name (`end0`) inside container.
+
 ## 0.1.6
 
 - Refined add-on artwork with a clean WireGuard symbol.
