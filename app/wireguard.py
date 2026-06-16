@@ -91,24 +91,6 @@ def server_address(vpn_cidr: str) -> str:
     return f'{next(net.hosts())}/{net.prefixlen}'
 
 
-def detect_default_iface() -> str:
-    # With host_network=true the container shares the host routing table,
-    # so 'ip route' returns the host interface name (e.g. end0). But iptables
-    # inside the container sees the veth interface name (e.g. eth0).
-    # 'ip route get 1.1.1.1' asks the kernel which interface reaches the internet.
-    # We parse 'dev <iface>' from the output using Python to avoid shell quoting issues.
-    try:
-        out = sh(['ip', 'route', 'get', '1.1.1.1'], check=False)
-        tokens = out.split()
-        for i, token in enumerate(tokens):
-            if token == 'dev' and i + 1 < len(tokens):
-                iface = tokens[i + 1]
-                if iface != 'wg0':
-                    return iface
-        return 'eth0'
-    except Exception:
-        return 'eth0'
-
 
 def setup_server(public_host: str, port: int, vpn_cidr: str, lan_cidr: str, dns: str, default_route_mode: str) -> Dict:
     ensure_dirs()
@@ -133,7 +115,6 @@ def setup_server(public_host: str, port: int, vpn_cidr: str, lan_cidr: str, dns:
         'default_route_mode': default_route_mode,
         'private_key': keys['private_key'],
         'public_key': keys['public_key'],
-        'interface': detect_default_iface(),
     }
     state['clients'] = []
     save_state(state)
@@ -196,10 +177,9 @@ def remove_client(name: str):
 
 def render_server_config(state: Dict):
     server = state['server']
-    # Always detect the live default interface at render time.
-    # The container's interface name (eth0) differs from the host name
-    # (end0) that was stored during setup, so we don't trust the stored value.
-    iface = detect_default_iface()
+    # iptables inside the add-on container always sees eth0 regardless of
+    # the host interface name (e.g. end0), so hardcode it here.
+    iface = 'eth0'
     vpn_net = str(ipaddress.ip_network(server['vpn_cidr'], strict=False))
     lines = [
         '[Interface]',
