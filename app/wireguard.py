@@ -118,7 +118,10 @@ def setup_server(public_host: str, port: int, vpn_cidr: str, lan_cidr: str, dns:
         'private_key': keys['private_key'],
         'public_key': keys['public_key'],
     }
-    state['clients'] = []
+    # Preserve existing clients if re-running setup after reinstall.
+    # Only reset to empty if there are genuinely no clients yet.
+    if 'clients' not in state:
+        state['clients'] = []
     save_state(state)
     render_server_config(state)
     restart_wg()
