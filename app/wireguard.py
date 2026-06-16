@@ -8,7 +8,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
 
-DATA = Path(os.environ.get('DATA_DIR', '/data'))
+# Data is stored in /config/wireguard_wizard so it persists across
+# add-on uninstalls and updates. /data is wiped on uninstall.
+DATA = Path(os.environ.get('DATA_DIR', '/config/wireguard_wizard'))
 WG_DIR = DATA / 'wireguard'
 CLIENT_DIR = DATA / 'clients'
 STATE_FILE = DATA / 'state.json'

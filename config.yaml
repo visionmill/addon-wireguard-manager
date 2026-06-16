@@ -1,5 +1,5 @@
 name: "WireGuard Wizard"
-version: "0.2.1"
+version: "0.2.2"
 slug: "wireguard_wizard"
 description: "PiVPN-style WireGuard setup wizard for Home Assistant OS"
 url: "https://github.com/visionmill/addon-wireguard-manager"
@@ -21,6 +21,8 @@ ports:
   51820/udp: 51820
 ports_description:
   51820/udp: WireGuard VPN
+map:
+  - config:rw
 options:
   web_port: 8099
   wg_port: 51820
