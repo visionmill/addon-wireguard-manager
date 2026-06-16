@@ -95,17 +95,16 @@ def detect_default_iface() -> str:
     # With host_network=true the container shares the host routing table,
     # so 'ip route' returns the host interface name (e.g. end0). But iptables
     # inside the container sees the veth interface name (e.g. eth0).
-    # We find the correct name by listing /sys/class/net and skipping
-    # loopback, wg interfaces, and docker/bridge interfaces.
+    # 'ip route get 1.1.1.1' asks the kernel which interface reaches the internet.
+    # We parse 'dev <iface>' from the output using Python to avoid shell quoting issues.
     try:
-        ifaces = sh(['sh', '-c', 'ls /sys/class/net/'], check=False).split()
-        for iface in ifaces:
-            if (iface != 'lo'
-                    and not iface.startswith('wg')
-                    and not iface.startswith('docker')
-                    and not iface.startswith('br-')
-                    and not iface.startswith('veth')):
-                return iface
+        out = sh(['ip', 'route', 'get', '1.1.1.1'], check=False)
+        tokens = out.split()
+        for i, token in enumerate(tokens):
+            if token == 'dev' and i + 1 < len(tokens):
+                iface = tokens[i + 1]
+                if iface != 'wg0':
+                    return iface
         return 'eth0'
     except Exception:
         return 'eth0'
